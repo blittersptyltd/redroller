@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { navigateTo } from "@devvit/web/client";
-import { ArrowUpRight, ChevronLeft, ChevronRight, X, Sparkles, TrendingUp, Shuffle, RefreshCw, LoaderCircle } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight, X, Sparkles, TrendingUp, Shuffle, RefreshCw, LoaderCircle, Globe } from "lucide-react";
 import { readerStateSchema, discoverySchema, type Discovery, type Post, type ReaderState } from "../../lib/reddit";
 
 export async function readJson(response: Response): Promise<unknown> {
@@ -160,7 +160,7 @@ export function ImageViewer({ post, initialIndex, onClose }: { post: Post; initi
 
 
 export function useDiscovery(favourites: string[], enabled: boolean, current: string) {
-  const [mode, setMode] = useState<"recommended" | "popular" | "random">("recommended");
+  const [mode, setMode] = useState<"all" | "recommended" | "popular" | "random">(current.toLowerCase() === "all" ? "all" : "recommended");
   const [period, setPeriod] = useState<"all" | "trending">("trending");
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<Discovery | null>(null);
@@ -170,7 +170,10 @@ export function useDiscovery(favourites: string[], enabled: boolean, current: st
   const favouritesKey = favourites.map((name) => name.toLowerCase()).sort().join(",");
   const activeRandom = mode === "random" ? current : "";
   useEffect(() => {
-    if (!enabled) return;
+    setMode((previous) => current.toLowerCase() === "all" ? "all" : previous === "all" ? "recommended" : previous);
+  }, [current]);
+  useEffect(() => {
+    if (!enabled || mode === "all") return;
     const abort = new AbortController();
     async function load() {
       setLoading(true); setError(""); setResult(null);
@@ -202,14 +205,15 @@ export function DiscoveryPanel({ discovery, current, onChoose }: {
   discovery: ReturnType<typeof useDiscovery>; current: string; onChoose: (name: string) => void;
 }) {
   return <section className="discovery" aria-label="Discover communities">
-    <div className="sidebar-label discovery-heading">DISCOVER <button aria-label={discovery.mode === "random" ? "Shuffle communities" : "Refresh suggestions"} onClick={discovery.refresh} disabled={discovery.loading}><RefreshCw size={13}/></button></div>
+    <div className="sidebar-label discovery-heading">DISCOVER {discovery.mode !== "all" && <button aria-label={discovery.mode === "random" ? "Shuffle communities" : "Refresh suggestions"} onClick={discovery.refresh} disabled={discovery.loading}><RefreshCw size={13}/></button>}</div>
     <div className="discovery-modes" aria-label="Discovery mode">{([
+      { key: "all", label: "All", icon: Globe },
       { key: "recommended", label: "Recommended", icon: Sparkles },
       { key: "popular", label: "Popular", icon: TrendingUp },
       { key: "random", label: "Random", icon: Shuffle },
-    ] as const).map(({ key, label, icon: Icon }) => <button key={key} className={discovery.mode === key ? "selected" : ""} aria-pressed={discovery.mode === key} onClick={() => discovery.setMode(key)}><Icon size={14}/>{label}</button>)}</div>
+    ] as const).map(({ key, label, icon: Icon }) => <button key={key} className={discovery.mode === key ? "selected" : ""} aria-pressed={discovery.mode === key} onClick={() => { discovery.setMode(key); if (key === "all") onChoose("all"); }}><Icon size={14}/>{label}</button>)}</div>
     {discovery.mode === "popular" && <div className="discovery-period" aria-label="Popularity period"><button aria-pressed={discovery.period === "all"} onClick={() => discovery.setPeriod("all")}>All time</button><button aria-pressed={discovery.period === "trending"} onClick={() => discovery.setPeriod("trending")}>Trending</button></div>}
-    {discovery.loading ? <p className="discovery-note" role="status"><LoaderCircle className="spin" size={13}/>Finding communities…</p>
+    {discovery.mode === "all" ? null : discovery.loading ? <p className="discovery-note" role="status"><LoaderCircle className="spin" size={13}/>Finding communities…</p>
       : discovery.error ? <div className="discovery-note" role="alert">{discovery.error}<button onClick={discovery.refresh}>Try again</button></div>
       : <><p className="discovery-note">{discovery.result?.note}</p><nav aria-label="Suggested communities">{discovery.result?.items.map((item, index) => <button key={item.name} className={`discovery-community ${current.toLowerCase() === item.name.toLowerCase() ? "selected" : ""}`} onClick={() => onChoose(item.name)} title={`${item.title}${item.members === null ? "" : ` · ${new Intl.NumberFormat("en", { notation: "compact" }).format(item.members)} members`}
 ${item.reason}`}><span className={`community-icon hue-${index % 4}`}>{item.name[0]!.toUpperCase()}</span><span><strong>r/{item.name}</strong><small>{discovery.mode === "recommended" || item.members === null ? item.reason : `${new Intl.NumberFormat("en", { notation: "compact" }).format(item.members)} members`}</small></span></button>)}</nav>{discovery.mode === "random" && <button className="discovery-shuffle" onClick={discovery.refresh}><Shuffle size={14}/>Shuffle again</button>}</>}
