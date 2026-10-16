@@ -1,0 +1,16 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "redroller-brad",
+  "permissions": { "reddit": true, "redis": true },
+  "dev": { "subreddit": "redroller_brad_dev" },
+  "menu": { "items": [{ "label": "Create Redroller reader", "location": "subreddit", "forUserType": "moderator", "endpoint": "/internal/menu/create-reader" }] },
+  "post": {
+    "dir": "dist/client",
+    "entrypoints": {
+      "default": { "inline": true, "entry": "launch.html" },
+      "reader": { "entry": "index.html" }
+    }
+  },
+  "server": { "dir": "dist/server", "entry": "index.cjs" },
+  "scripts": { "dev": "vite build --watch", "build": "vite build" }
+}

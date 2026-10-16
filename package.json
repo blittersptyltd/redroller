@@ -1,0 +1,40 @@
+{
+  "name": "redroller-brad",
+  "version": "1.0.0",
+  "description": "A responsive infinite subreddit card reader for Devvit",
+  "main": "index.js",
+  "scripts": {
+    "dev": "devvit playtest",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/client/tsconfig.json",
+    "test": "node --import tsx --test src/server/*.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@devvit/start": "^0.14.8",
+    "@devvit/web": "^0.14.8",
+    "@hono/node-server": "^2.1.5",
+    "hono": "^4.13.13",
+    "lucide-react": "^1.57.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "devvit": "^0.14.8",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.20.0"
+  }
+}
