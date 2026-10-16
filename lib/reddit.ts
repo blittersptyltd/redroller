@@ -54,6 +54,7 @@ export const readerStateSchema = z.object({
 });
 export type ReaderState = z.infer<typeof readerStateSchema>;
 export type Resume = z.infer<typeof resumeSchema>;
+export const privacyStatusSchema = z.object({ signedIn: z.boolean(), token: z.uuid().nullable() });
 
 export const discoveryQuerySchema = z.object({
   mode: z.enum(["recommended", "popular", "random"]).default("recommended"),

@@ -4,6 +4,7 @@ import { navigateTo } from "@devvit/web/client";
 import { ArrowDown, ArrowUpRight, ChevronLeft, ChevronRight, Flame, Grid2X2, Image, Layers, LoaderCircle, MessageCircle, RefreshCw, Search, Shield, Sparkles, Star, X, TrendingUp, EyeOff, Keyboard, Shuffle } from "lucide-react";
 import { feedQuerySchema, feedSchema, favouritesSchema, mixFeedSchema, type FeedQuery, type Post, type PageCursor, type Resume } from "../../lib/reddit";
 import { ImageViewer, readJson, useReaderMemory, useDiscovery, DiscoveryPanel } from "./reader-features";
+import { PrivacyGate } from "./privacy";
 import "./styles.css";
 
 const NUMBER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
@@ -234,8 +235,8 @@ function Feed({ query, compact, mediaOnly, source, hideSeen, seen, resume, onSee
   </>;
 }
 
-function Reader() {
-  const memory = useReaderMemory();
+function Reader({ token, openHelp }: { token: string | null; openHelp: () => void }) {
+  const memory = useReaderMemory(token);
   const { state: preferences, setState: setPreferences } = memory;
   const { query, compact, mediaOnly, source, hideSeen } = preferences;
   const onSeen = useCallback((ids: string[]) => {
@@ -272,6 +273,7 @@ function Reader() {
     return favouritesSchema.parse(data).favourites;
   }
   useEffect(() => {
+    if (!token) { setFavourites([]); setFavouritesReady(true); return; }
     const abort = new AbortController();
     async function loadFavourites() {
       setFavouritesError("");
@@ -285,13 +287,14 @@ function Reader() {
     }
     void loadFavourites();
     return () => abort.abort();
-  }, [favouritesRetry]);
+  }, [favouritesRetry, token]);
 
   async function updateFavourite(subreddit: string, saved: boolean) {
+    if (!token) { openHelp(); return; }
     if (!favouritesReady || favouriteLock.current) return;
     favouriteLock.current = true; setFavouritesBusy(true); setFavouritesError("");
     try {
-      const response = await fetch("/api/favourites", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subreddit, saved }) });
+      const response = await fetch("/api/favourites", { method: "PUT", headers: { "Content-Type": "application/json", "X-Reader-Consent": token }, body: JSON.stringify({ subreddit, saved }) });
       setFavourites(await readFavouritesResponse(response));
       if (source === "favourites") onResume(null);
     } catch (error) {
@@ -326,7 +329,7 @@ function Reader() {
       <div className="header-search"><form className="search" onSubmit={search}><Search size={19}/><span className="search-prefix">r/</span><input aria-label="Subreddit name" placeholder="Where do you want to go?" value={input} onChange={(event) => setInput(event.target.value)} maxLength={25} aria-invalid={!!inputError} aria-describedby={inputError ? "search-error" : undefined}/><button type="submit">Let’s roll <ArrowUpRight size={16}/></button></form>
         {inputError && <p id="search-error" className="input-error" role="alert">{inputError}</p>}
       </div>
-      <span className="reddit-label">Made for Reddit <ArrowUpRight size={14}/></span>
+      <button className="privacy-help-button" onClick={openHelp}>Privacy &amp; help</button>
     </header>
     <div className="workspace">
       <aside className="sidebar"><div className="intro"><div className="eyebrow"><span className="status-dot"/> FIND YOUR NEXT</div><h1>Rabbit hole<span>.</span></h1><p>Your favourite communities,<br/>one card at a time.</p></div><div className="sidebar-label">YOUR LAUNCHPAD</div><button className={`explore ${source === "community" && query.subreddit === "pics" ? "active" : ""}`} onClick={() => chooseSubreddit("pics")}><Sparkles size={17}/> Explore</button>{favouritesList}<DiscoveryPanel discovery={discovery} current={source === "community" ? query.subreddit : ""} onChoose={chooseSubreddit}/><div className="sidebar-note"><Layers size={22}/><p>A little less noise.<br/>A lot more discovery.</p><span>Just pick a subreddit and roll.</span></div></aside>
@@ -341,4 +344,4 @@ function Reader() {
     </div>
   </main>;
 }
-createRoot(document.getElementById("root")!).render(<Reader/>);
+createRoot(document.getElementById("root")!).render(<PrivacyGate>{(token, openHelp) => <Reader key={token ?? "temporary"} token={token} openHelp={openHelp}/>}</PrivacyGate>);

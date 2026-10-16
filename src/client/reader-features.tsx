@@ -14,7 +14,7 @@ export async function readJson(response: Response): Promise<unknown> {
   } catch (error) { throw error; }
 }
 
-export function useReaderMemory() {
+export function useReaderMemory(token: string | null) {
   const [state, setState] = useState<ReaderState>(() => readerStateSchema.parse({}));
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +23,7 @@ export function useReaderMemory() {
   const latest = useRef("");
   const saved = useRef("");
   const saving = useRef(false);
-  const temporary = useRef(false);
+  const temporary = useRef(!token);
   const mounted = useRef(true);
 
   const flush = useCallback(async () => {
@@ -33,16 +33,17 @@ export function useReaderMemory() {
       // Serialize writes so a slow previous scroll save cannot overwrite newer settings.
       while (latest.current !== saved.current) {
         const body = latest.current;
-        await readJson(await fetch("/api/reader-state", { method: "PUT", headers: { "Content-Type": "application/json" }, body, keepalive: true }));
+        await readJson(await fetch("/api/reader-state", { method: "PUT", headers: { "Content-Type": "application/json", "X-Reader-Consent": token ?? "" }, body, keepalive: true }));
         saved.current = body;
       }
       if (mounted.current) setSaveError("");
     } catch (cause) {
       if (mounted.current) setSaveError(cause instanceof Error ? cause.message : "Couldn’t remember your place.");
     } finally { saving.current = false; }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
+    if (!token) { setReady(true); return; }
     mounted.current = true;
     const abort = new AbortController();
     async function load() {
@@ -59,7 +60,7 @@ export function useReaderMemory() {
     }
     void load();
     return () => { mounted.current = false; abort.abort(); };
-  }, [retry]);
+  }, [retry, token]);
   useEffect(() => {
     if (!ready) return;
     latest.current = JSON.stringify(state);

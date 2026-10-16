@@ -8,7 +8,7 @@ function post(id = "t3_abc"): Post {
   return { id, title: "A test post", subredditName: "pics", authorName: "tester", score: 4,
     numberOfComments: 2, createdAt: new Date("2026-10-15T00:00:00Z"),
     permalink: "/r/pics/comments/abc/example/", body: "Some text", url: "https://i.redd.it/example.jpg",
-    gallery: [], thumbnail: undefined, secureMedia: undefined, nsfw: false, spoiler: false } as unknown as Post;
+    gallery: [], thumbnail: undefined, secureMedia: undefined, nsfw: false, spoiler: false, isRemoved: () => false } as unknown as Post;
 }
 
 test("input rejects paths and invalid cursors while trimming subreddit names", () => {
@@ -31,7 +31,7 @@ test("media normalization keeps galleries and content warnings", () => {
 test("pagination uses the last returned post and preserves subreddit and top timeframe", async () => {
   try {
     let captured: unknown;
-    const client = { getTopPosts(options: unknown) { captured = options; return { hasMore: true, async get(count: number) { assert.equal(count, 25); return [post("t3_abc"), post("t3_def")]; } }; } } as unknown as RedditClient;
+    const client = { async getSubredditInfoByName() { return { type: "public", isNsfw: false, isQuarantined: false }; }, getTopPosts(options: unknown) { captured = options; return { hasMore: true, async get(count: number) { assert.equal(count, 25); return [post("t3_abc"), post("t3_def")]; } }; } } as unknown as RedditClient;
     const result = await getFeed(client, { subreddit: "space", sort: "top", time: "month", after: "t3_prev" });
     assert.deepEqual(captured, { subredditName: "space", timeframe: "month", after: "t3_prev", pageSize: 25, limit: 25 });
     assert.equal(result.after, "t3_def");
@@ -41,17 +41,40 @@ test("pagination uses the last returned post and preserves subreddit and top tim
 
 test("pagination ends on exhausted or repeated cursors", async () => {
   try {
-    const client = { getHotPosts() { return { hasMore: true, async get() { return [post()]; } }; } } as unknown as RedditClient;
+    const client = { async getSubredditInfoByName() { return { type: "public", isNsfw: false, isQuarantined: false }; }, getHotPosts() { return { hasMore: true, async get() { return [post()]; } }; } } as unknown as RedditClient;
     assert.equal((await getFeed(client, { subreddit: "pics", after: "t3_abc" })).after, null);
-    const emptyClient = { getHotPosts() { return { hasMore: false, async get() { return []; } }; } } as unknown as RedditClient;
+    const emptyClient = { async getSubredditInfoByName() { return { type: "public", isNsfw: false, isQuarantined: false }; }, getHotPosts() { return { hasMore: false, async get() { return []; } }; } } as unknown as RedditClient;
     assert.deepEqual(await getFeed(emptyClient, {}), { posts: [], after: null });
   } catch (error) { throw error; }
 });
 
 test("upstream failure propagates without inventing content", async () => {
   try {
-    const client = { getNewPosts() { return { async get() { throw new Error("Access denied"); } }; } } as unknown as RedditClient;
+    const client = { async getSubredditInfoByName() { return { type: "public", isNsfw: false, isQuarantined: false }; }, getNewPosts() { return { async get() { throw new Error("Access denied"); } }; } } as unknown as RedditClient;
     await assert.rejects(getFeed(client, { sort: "new" }), /Access denied/);
+  } catch (error) { throw error; }
+});
+
+test("community restrictions are checked before any posts are requested", async () => {
+  try {
+    for (const info of [{ type: "private" }, { type: "public", isNsfw: true }, { type: "public", isQuarantined: true }, {}]) {
+      let requested = false;
+      const client = { async getSubredditInfoByName() { return info; }, getHotPosts() { requested = true; throw new Error("Unexpected post request"); } } as unknown as RedditClient;
+      await assert.rejects(getFeed(client, { subreddit: "example" }), /Only public/);
+      assert.equal(requested, false);
+    }
+  } catch (error) { throw error; }
+});
+
+test("mature and removed posts are excluded without losing pagination progress", async () => {
+  try {
+    const client = {
+      async getSubredditInfoByName() { return { type: "public" }; },
+      getHotPosts() { return { hasMore: true, async get() { return [post(), { ...post("t3_adult"), nsfw: true }, { ...post("t3_removed"), isRemoved: () => true }]; } }; },
+    } as unknown as RedditClient;
+    const result = await getFeed(client, {});
+    assert.deepEqual(result.posts.map((item) => item.id), ["t3_abc"]);
+    assert.equal(result.after, "t3_removed");
   } catch (error) { throw error; }
 });
 
@@ -59,7 +82,7 @@ test("mixed pages round-robin communities and retain independent cursors", async
   try {
     const { getMixedFeed } = await import("./feed");
     const calls: Array<{ subredditName: string; after?: string }> = [];
-    const client = { getHotPosts(options: { subredditName: string; after?: string }) {
+    const client = { async getSubredditInfoByName() { return { type: "public", isNsfw: false, isQuarantined: false }; }, getHotPosts(options: { subredditName: string; after?: string }) {
       calls.push(options);
       return { hasMore: !options.after, async get() { return [post(`t3_${options.subredditName}${options.after ? '2' : '1'}`)]; } };
     } } as unknown as RedditClient;
@@ -77,7 +100,7 @@ test("mixed pagination visits all favourites with at most four requests per page
   try {
     const { getMixedFeed } = await import("./feed");
     const names: string[] = [];
-    const client = { getHotPosts(options: { subredditName: string }) {
+    const client = { async getSubredditInfoByName() { return { type: "public", isNsfw: false, isQuarantined: false }; }, getHotPosts(options: { subredditName: string }) {
       names.push(options.subredditName);
       return { hasMore: false, async get() { return [post(`t3_${options.subredditName}`)]; } };
     } } as unknown as RedditClient;
@@ -94,7 +117,7 @@ test("mixed pagination visits all favourites with at most four requests per page
 test("mix preserves retryable failures, deduplicates posts and ignores removed favourites", async () => {
   try {
     const { getMixedFeed } = await import("./feed");
-    const client = { getHotPosts(options: { subredditName: string }) {
+    const client = { async getSubredditInfoByName() { return { type: "public", isNsfw: false, isQuarantined: false }; }, getHotPosts(options: { subredditName: string }) {
       return { hasMore: false, async get() { if (options.subredditName === "blocked") throw new Error("Denied"); return [post()]; } };
     } } as unknown as RedditClient;
     const first = await getMixedFeed(client, ["pics", "space", "blocked"], {});
@@ -169,6 +192,6 @@ test("random discovery excludes recent suggestions and rejects upstream failure 
       async getSubredditInfoByName(name: string) { return { name, type: "public" }; },
     } as unknown as RedditClient;
     assert.deepEqual((await getDiscovery(client, ["pics"], { mode: "random", exclude: "space" })).items.map((item) => item.name), ["aww"]);
-    await assert.rejects(getDiscovery({ getHotPosts() { throw new Error("offline"); } } as unknown as RedditClient, [], { mode: "popular" }), /offline/);
+    await assert.rejects(getDiscovery({ async getSubredditInfoByName() { return { type: "public", isNsfw: false, isQuarantined: false }; }, getHotPosts() { throw new Error("offline"); } } as unknown as RedditClient, [], { mode: "popular" }), /offline/);
   } catch (error) { throw error; }
 });

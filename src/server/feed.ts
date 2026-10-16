@@ -16,22 +16,24 @@ export function normalizePost(post: RedditPost): Post {
   };
 }
 
-export async function getFeed(reddit: Pick<RedditClient, "getHotPosts" | "getNewPosts" | "getTopPosts">, input: unknown): Promise<Feed> {
+export async function getFeed(reddit: Pick<RedditClient, "getHotPosts" | "getNewPosts" | "getTopPosts" | "getSubredditInfoByName">, input: unknown): Promise<Feed> {
   try {
     const query = feedQuerySchema.parse(input);
+    const info = await reddit.getSubredditInfoByName(query.subreddit);
+    if (!["public", "restricted"].includes(info.type ?? "") || info.isNsfw || info.isQuarantined) throw new Error("Only public, non-mature communities are supported.");
     const options = { subredditName: query.subreddit, after: query.after, pageSize: 25, limit: 25 };
     const listing = query.sort === "new" ? reddit.getNewPosts(options)
       : query.sort === "top" ? reddit.getTopPosts({ ...options, timeframe: query.time })
       : reddit.getHotPosts(options);
     const posts = await listing.get(25);
     const lastId = posts.at(-1)?.id;
-    return { posts: posts.map(normalizePost), after: listing.hasMore && lastId && lastId !== query.after ? lastId : null };
+    return { posts: posts.filter((post) => !post.nsfw && !post.isRemoved()).map(normalizePost), after: listing.hasMore && lastId && lastId !== query.after ? lastId : null };
   } catch (error) { throw error; }
 }
 
 // Each page visits up to four communities, retaining an independent cursor for each.
 export async function getMixedFeed(
-  reddit: Pick<RedditClient, "getHotPosts" | "getNewPosts" | "getTopPosts">,
+  reddit: Pick<RedditClient, "getHotPosts" | "getNewPosts" | "getTopPosts" | "getSubredditInfoByName">,
   favourites: string[], input: unknown,
 ) {
   try {
