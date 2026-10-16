@@ -78,6 +78,51 @@ test("mature and removed posts are excluded without losing pagination progress",
   } catch (error) { throw error; }
 });
 
+test("All fetches an aggregate listing and checks each source community once before displaying it", async () => {
+  try {
+    const names: string[] = [];
+    let options: unknown;
+    const sourcePosts = ["pics", "PICS", "privateplace", "adultplace", "quarantine", "unavailable", "restrictedplace"].map((name, index) => ({ ...post(`t3_${index}`), subredditName: name }));
+    const client = {
+      async getSubredditInfoByName(name: string) {
+        names.push(name);
+        if (name === "unavailable") throw new Error("Offline");
+        return { type: name === "privateplace" ? "private" : name === "restrictedplace" ? "restricted" : "public", isNsfw: name === "adultplace", isQuarantined: name === "quarantine" };
+      },
+      getTopPosts(input: unknown) { options = input; return { hasMore: true, async get() { return sourcePosts; } }; },
+    } as unknown as RedditClient;
+    const result = await getFeed(client, { subreddit: "ALL", sort: "top", time: "month", after: "t3_before" });
+    assert.deepEqual(options, { subredditName: "all", timeframe: "month", after: "t3_before", pageSize: 25, limit: 25 });
+    assert.deepEqual(names, ["pics", "privateplace", "adultplace", "quarantine", "unavailable", "restrictedplace"]);
+    assert.deepEqual(result.posts.map((item) => item.id), ["t3_0", "t3_1", "t3_6"]);
+    assert.equal(result.after, "t3_6");
+  } catch (error) { throw error; }
+});
+
+test("All retains its raw cursor on a fully filtered page and reports a complete metadata outage", async () => {
+  try {
+    const client = {
+      async getSubredditInfoByName() { return { type: "private" }; },
+      getHotPosts() { return { hasMore: true, async get() { return [post("t3_blocked")]; } }; },
+    } as unknown as RedditClient;
+    assert.deepEqual(await getFeed(client, { subreddit: "all" }), { posts: [], after: "t3_blocked" });
+    const unavailable = { getHotPosts: client.getHotPosts, async getSubredditInfoByName() { throw new Error("Offline"); } } as unknown as RedditClient;
+    await assert.rejects(getFeed(unavailable, { subreddit: "all" }), /Couldn’t check All/);
+  } catch (error) { throw error; }
+});
+
+test("new readers default to All while previously saved community and mix selections survive", async () => {
+  try {
+    const { readerStateSchema } = await import("../../lib/reddit");
+    assert.equal(feedQuerySchema.parse({}).subreddit, "all");
+    assert.equal(readerStateSchema.parse({}).query.subreddit, "all");
+    const saved = { query: { subreddit: "space", sort: "new", time: "week" }, resume: { after: "t3_abc", anchor: "t3_def", offset: -80 } };
+    assert.equal(readerStateSchema.parse(saved).query.subreddit, "space");
+    assert.deepEqual(readerStateSchema.parse(saved).resume, saved.resume);
+    assert.equal(readerStateSchema.parse({ source: "favourites" }).source, "favourites");
+  } catch (error) { throw error; }
+});
+
 test("mixed pages round-robin communities and retain independent cursors", async () => {
   try {
     const { getMixedFeed } = await import("./feed");

@@ -6,7 +6,7 @@ Built with Reddit Devvit, React, TypeScript, Vite, Hono, and Redis. Redroller ru
 
 ## Using Redroller
 
-Open a Redroller post and select **Open Redroller**. Choose **Continue without saving** for a temporary session, or **Remember my reading** to enable account-linked favourites and reading memory. Enter a public, non-mature subreddit in the top bar, then scroll through its cards. Reddit's **Fullscreen** option gives the reader the most space.
+Open a Redroller post and select **Open Redroller**. Choose **Continue without saving** for a temporary session, or **Remember my reading** to enable account-linked favourites and reading memory. New readers start at **Home · All**, showing posts across Reddit with the app's public/non-mature content filters. Select **Home** or the logo to return there, or enter a subreddit in the top bar. Returning readers with saving enabled resume their existing selection. Reddit's **Fullscreen** option gives the reader the most space.
 
 Star a community to add it to the favourites sidebar when saving is enabled. **Favourites mix** combines those communities; **Recommended**, **Popular**, and **Random** help find more. Open **Privacy & help** at any time to read the privacy policy and terms, contact the developer, or delete saved data.
 
@@ -19,6 +19,7 @@ Once the app is available for your community, install it through its [Devvit app
 ## Features
 
 - **Card feeds:** images, galleries, Reddit-hosted video, and text posts with automatic pagination and a manual load-more fallback.
+- **Home:** a Reddit-wide All feed available from desktop and mobile navigation. This is not the user's personalised Reddit Home feed; Devvit does not expose subscriptions, saved content, votes, or browsing history.
 - **Feed controls:** Hot, New, and Top sorting; Top time ranges; media-only filtering; comfortable and compact layouts.
 - **Favourites:** a persistent sidebar and a mixed feed combining saved communities. On small screens, navigation collapses into a menu.
 - **Discovery:** Recommended, Popular (All time or Trending), and Random community suggestions.

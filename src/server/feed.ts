@@ -1,4 +1,4 @@
-import type { Post as RedditPost, RedditClient } from "@devvit/reddit";
+import type { Post as RedditPost, RedditClient, SubredditInfo } from "@devvit/reddit";
 import { feedQuerySchema, mixQuerySchema, subredditNameSchema, safeUrl, type Feed, type Post } from "../../lib/reddit";
 
 export function normalizePost(post: RedditPost): Post {
@@ -16,18 +16,44 @@ export function normalizePost(post: RedditPost): Post {
   };
 }
 
+function readableCommunity(info: SubredditInfo): boolean {
+  return ["public", "restricted"].includes(info.type ?? "") && !info.isNsfw && !info.isQuarantined;
+}
+
 export async function getFeed(reddit: Pick<RedditClient, "getHotPosts" | "getNewPosts" | "getTopPosts" | "getSubredditInfoByName">, input: unknown): Promise<Feed> {
   try {
     const query = feedQuerySchema.parse(input);
-    const info = await reddit.getSubredditInfoByName(query.subreddit);
-    if (!["public", "restricted"].includes(info.type ?? "") || info.isNsfw || info.isQuarantined) throw new Error("Only public, non-mature communities are supported.");
-    const options = { subredditName: query.subreddit, after: query.after, pageSize: 25, limit: 25 };
+    const isAll = query.subreddit.toLowerCase() === "all";
+    // All is an aggregate listing, not a community with its own access metadata.
+    if (!isAll && !readableCommunity(await reddit.getSubredditInfoByName(query.subreddit))) throw new Error("Only public, non-mature communities are supported.");
+    const options = { subredditName: isAll ? "all" : query.subreddit, after: query.after, pageSize: 25, limit: 25 };
     const listing = query.sort === "new" ? reddit.getNewPosts(options)
       : query.sort === "top" ? reddit.getTopPosts({ ...options, timeframe: query.time })
       : reddit.getHotPosts(options);
     const posts = await listing.get(25);
     const lastId = posts.at(-1)?.id;
-    return { posts: posts.filter((post) => !post.nsfw && !post.isRemoved()).map(normalizePost), after: listing.hasMore && lastId && lastId !== query.after ? lastId : null };
+    let visible = posts.filter((post) => !post.nsfw && !post.isRemoved());
+    if (isAll) {
+      const names = [...new Set(visible.map((post) => post.subredditName.toLowerCase()))];
+      const allowed = new Set<string>();
+      let checked = 0;
+      // Check each source once per page, with bounded concurrent API requests.
+      for (let offset = 0; offset < names.length; offset += 8) {
+        const batch = names.slice(offset, offset + 8);
+        const results = await Promise.allSettled(batch.map(async (name) => {
+          try { return await reddit.getSubredditInfoByName(name); } catch (error) { throw error; }
+        }));
+        results.forEach((result, index) => {
+          if (result.status === "fulfilled") {
+            checked++;
+            if (readableCommunity(result.value)) allowed.add(batch[index]!);
+          }
+        });
+      }
+      if (names.length && !checked) throw new Error("Couldn’t check All feed communities. Please retry.");
+      visible = visible.filter((post) => allowed.has(post.subredditName.toLowerCase()));
+    }
+    return { posts: visible.map(normalizePost), after: listing.hasMore && lastId && lastId !== query.after ? lastId : null };
   } catch (error) { throw error; }
 }
 

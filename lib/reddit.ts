@@ -5,7 +5,7 @@ export const favouritesSchema = z.object({ favourites: z.array(subredditNameSche
 export const favouriteUpdateSchema = z.object({ subreddit: subredditNameSchema, saved: z.boolean() });
 
 export const feedQuerySchema = z.object({
-  subreddit: subredditNameSchema.default("pics"),
+  subreddit: subredditNameSchema.default("all"),
   sort: z.enum(["hot", "new", "top"]).default("hot"),
   time: z.enum(["hour", "day", "week", "month", "year", "all"]).default("week"),
   after: z.string().trim().regex(/^t3_[a-z0-9]+$/).optional(),
@@ -44,7 +44,7 @@ export const resumeSchema = z.object({
   offset: z.number().min(-10000).max(10000),
 });
 export const readerStateSchema = z.object({
-  query: feedQuerySchema.omit({ after: true }).default({ subreddit: "pics", sort: "hot", time: "week" }),
+  query: feedQuerySchema.omit({ after: true }).default({ subreddit: "all", sort: "hot", time: "week" }),
   source: z.enum(["community", "favourites"]).default("community"),
   compact: z.boolean().default(false),
   mediaOnly: z.boolean().default(false),
