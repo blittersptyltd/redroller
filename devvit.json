@@ -1,9 +1,9 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
-  "name": "redroller-brad",
+  "name": "redroller-reader",
   "permissions": { "reddit": true, "redis": true },
   "triggers": { "onAppUpgrade": "/internal/on-app-upgrade" },
-  "dev": { "subreddit": "redroller_brad_dev" },
+  "dev": { "subreddit": "redroller_reader_dev" },
   "menu": { "items": [{ "label": "Create Redroller reader", "location": "subreddit", "forUserType": "moderator", "endpoint": "/internal/menu/create-reader" }] },
   "post": {
     "dir": "dist/client",

@@ -1,34 +1,37 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { navigateTo } from "@devvit/web/client";
 import { ArrowDown, ArrowUpRight, ChevronLeft, ChevronRight, Flame, Grid2X2, Image, Layers, LoaderCircle, MessageCircle, RefreshCw, Search, Shield, Sparkles, Star, X, TrendingUp, EyeOff, Keyboard, Shuffle, Globe } from "lucide-react";
 import { feedQuerySchema, feedSchema, favouritesSchema, mixFeedSchema, type FeedQuery, type Post, type PageCursor, type Resume } from "../../lib/reddit";
-import { ImageViewer, readJson, useReaderMemory, useDiscovery, DiscoveryPanel } from "./reader-features";
+import { PostViewer, readJson, useReaderMemory, useDiscovery, DiscoveryPanel } from "./reader-features";
 import { PrivacyGate } from "./privacy";
 import "./styles.css";
 
 const NUMBER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
-function PostCard({ post, onImage }: { post: Post; onImage: (post: Post, index: number) => void }) {
+function PostCard({ post, onPreview }: { post: Post; onPreview: (post: Post, index: number, trigger: HTMLButtonElement) => void }) {
   const [revealed, setRevealed] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
   const [failed, setFailed] = useState(false);
   const hidden = (post.nsfw || post.spoiler) && !revealed;
-  function openPost() { navigateTo(post.permalink); }
+  function openPreview(event: MouseEvent<HTMLButtonElement>) {
+    if (hidden) { setRevealed(true); return; }
+    onPreview(post, imageIndex, event.currentTarget);
+  }
   const hours = Math.max(1, Math.floor((Date.now() - post.created) / 3600000));
   return <article className="post-card" data-post-id={post.id} tabIndex={-1} aria-label={hidden ? "Hidden post" : post.title}>
     {hidden ? <button className="reveal" onClick={() => setRevealed(true)}><Shield size={25}/><strong>{post.nsfw ? "NSFW content" : "Spoiler"}</strong><span>Click to reveal</span></button> : <>
       {post.video && !failed ? <video className="card-media" src={post.video} poster={post.images[0]} controls playsInline preload="none" onError={() => setFailed(true)}/>
         : post.images.length > 0 && !failed ? <div className="image-wrap">
-          <button className="image-button" onClick={() => onImage(post, imageIndex)} aria-label={`View image: ${post.title}`}><img src={post.images[imageIndex]} alt={post.title} loading="lazy" decoding="async" onError={() => setFailed(true)}/></button>
+          <button className="image-button" onClick={openPreview} aria-label={`View image: ${post.title}`}><img src={post.images[imageIndex]} alt={post.title} loading="lazy" decoding="async" onError={() => setFailed(true)}/></button>
           {post.images.length > 1 && <div className="gallery-controls"><button aria-label="Previous image" disabled={imageIndex === 0} onClick={() => setImageIndex((index) => index - 1)}><ChevronLeft size={16}/></button><span>{imageIndex + 1} / {post.images.length}</span><button aria-label="Next image" disabled={imageIndex === post.images.length - 1} onClick={() => setImageIndex((index) => index + 1)}><ChevronRight size={16}/></button></div>}
         </div> : null}
-      {failed && <button className="media-failed" onClick={openPost}>View media on Reddit <ArrowUpRight size={15}/></button>}
+      {failed && <button className="media-failed" onClick={openPreview}>Preview post</button>}
     </>}
     <div className="card-body"><div className="post-meta"><span>r/{post.subreddit}</span><span>{hours >= 24 ? `${Math.floor(hours / 24)}d` : `${hours}h`} ago</span></div>
-      <button className="post-title" onClick={openPost}>{hidden ? "Hidden post" : post.title}</button>
+      <button className="post-title" onClick={openPreview}>{hidden ? "Hidden post" : post.title}</button>
       {!hidden && post.text && <p className="post-text">{post.text}</p>}
-      <div className="card-bottom"><span className="score"><TrendingUp size={14}/>{NUMBER.format(post.score)}</span><button onClick={openPost} aria-label={`${post.comments} comments`}><MessageCircle size={14}/>{NUMBER.format(post.comments)}</button><span className="author">u/{post.author}</span><button onClick={openPost} aria-label="Open on Reddit"><ArrowUpRight size={16}/></button></div>
+      <div className="card-bottom"><span className="score"><TrendingUp size={14}/>{NUMBER.format(post.score)}</span><button onClick={openPreview} aria-label={`Preview post with ${post.comments} comments`}><MessageCircle size={14}/>{NUMBER.format(post.comments)}</button><span className="author">u/{post.author}</span><button onClick={() => navigateTo(post.permalink)} aria-label="Open on Reddit" title="Open on Reddit (leaves Redroller)"><ArrowUpRight size={16}/></button></div>
     </div>
   </article>;
 }
@@ -44,7 +47,7 @@ function Feed({ query, compact, mediaOnly, source, hideSeen, seen, resume, onSee
   const [warnings, setWarnings] = useState<string[]>([]);
   const [ended, setEnded] = useState(false);
   const [columns, setColumns] = useState(3);
-  const [viewer, setViewer] = useState<{ post: Post; index: number } | null>(null);
+  const [viewer, setViewer] = useState<{ post: Post; index: number; trigger: HTMLButtonElement } | null>(null);
   const [restoreNote, setRestoreNote] = useState("");
   const [restoreReady, setRestoreReady] = useState(false);
   const [autoPages, setAutoPages] = useState(0);
@@ -221,7 +224,10 @@ function Feed({ query, compact, mediaOnly, source, hideSeen, seen, resume, onSee
     {!!warnings.length && <p className="reader-notice" role="status">{warnings.join(" ")}</p>}
     <div ref={grid} className={`card-grid ${compact ? "compact" : ""}`} aria-busy={loading} onFocusCapture={(event) => { const card = (event.target as HTMLElement).closest<HTMLElement>("[data-post-id]"); if (card) activeId.current = card.dataset.postId!; }}>
       {Array.from({ length: columns }, (_, column) => <div className="card-column" key={column}>
-        {visiblePosts.filter((_, index) => index % columns === column).map((post) => <PostCard key={post.id} post={post} onImage={(post, index) => { onSeen([post.id]); setViewer({ post, index }); }}/>) }
+        {visiblePosts.filter((_, index) => index % columns === column).map((post) => <PostCard key={post.id} post={post} onPreview={(post, index, trigger) => {
+          grid.current?.querySelectorAll("video").forEach((video) => video.pause());
+          onSeen([post.id]); setViewer({ post, index, trigger });
+        }}/>) }
         {loading && posts.length === 0 && [0, 1].map((index) => <div key={index} className="skeleton" aria-hidden="true"><div/><span/><span/></div>)}
       </div>)}
     </div>
@@ -231,7 +237,7 @@ function Feed({ query, compact, mediaOnly, source, hideSeen, seen, resume, onSee
         : ended ? <p>{visiblePosts.length ? "You’ve reached the end of this feed. Try another sort or community." : source === "favourites" && !posts.length ? "Star some communities to build your favourites mix." : "No posts to show. Try another community or turn off the filters."}</p>
         : <button className="load-more" onClick={() => { setAutoPages(0); void loadMore(); }}>Keep rolling <ArrowDown size={16}/></button>}
     </div>
-    {viewer && <ImageViewer post={viewer.post} initialIndex={viewer.index} onClose={() => setViewer(null)}/>}
+    {viewer && <PostViewer post={viewer.post} initialIndex={viewer.index} returnFocus={viewer.trigger} onClose={() => setViewer(null)}/>}
   </>;
 }
 
@@ -338,7 +344,7 @@ function Reader({ token, openHelp }: { token: string | null; openHelp: () => voi
         <details className="mobile-navigation"><summary><Layers size={14}/> Communities &amp; favourites <ChevronRight size={14}/></summary><div className="mobile-favourites">{favouritesList}</div><DiscoveryPanel discovery={discovery} current={source === "community" ? query.subreddit : ""} onChoose={chooseSubreddit}/></details>
         {favouritesError && <div className="favourites-error" role="alert"><span>{favouritesError}</span><button disabled={favouritesBusy} onClick={() => setFavouritesRetry((value) => value + 1)}>Reload favourites</button></div>}
         <div className="feed-toolbar"><div className="feed-name"><span className="feed-avatar">{isAll ? <Globe size={19}/> : "r/"}</span><div><h2>{source === "favourites" ? "Favourites mix" : isAll ? "All" : query.subreddit}</h2></div></div><div className="feed-actions"><div className="sort-tabs" aria-label="Sort posts">{([{ key: "hot", label: "Hot", icon: Flame }, { key: "new", label: "New", icon: Sparkles }, { key: "top", label: "Top", icon: TrendingUp }] as const).map(({ key, label, icon: Icon }) => <button key={key} aria-pressed={query.sort === key} className={query.sort === key ? "selected" : ""} onClick={() => setQuery((current) => ({ ...current, sort: key }))}><Icon size={15}/>{label}</button>)}</div><button className="icon-button" aria-label="Refresh feed" onClick={() => { onResume(null); setRefresh((value) => value + 1); window.scrollTo({ top: 0 }); }}><RefreshCw size={17}/></button></div></div>
-        <div className="view-toolbar">{source === "community" && !isAll && <button className={`favourite-toggle ${isFavourite ? "saved" : ""}`} disabled={!favouritesReady || favouritesBusy} aria-pressed={isFavourite} aria-label={`${isFavourite ? "Remove" : "Add"} r/${query.subreddit} ${isFavourite ? "from" : "to"} favourites`} onClick={() => void updateFavourite(query.subreddit, !isFavourite)}>{favouritesBusy ? <LoaderCircle className="spin" size={15}/> : <Star size={15} fill={isFavourite ? "currentColor" : "none"}/>}<span>{isFavourite ? "Favourited" : "Favourite"}</span></button>}<label className="media-toggle"><input type="checkbox" checked={mediaOnly} onChange={(event) => setPreferences((current) => ({ ...current, mediaOnly: event.target.checked, resume: null }))}/><Image size={14}/>Media only</label><label className="media-toggle" title="Hide posts viewed before this feed opened. Cards stay in place while you read."><input type="checkbox" checked={hideSeen} onChange={(event) => setPreferences((current) => ({ ...current, hideSeen: event.target.checked, resume: null }))}/><EyeOff size={14}/>Hide seen</label>{hideSeen && <button className="reset-seen" onClick={() => { setPreferences((current) => ({ ...current, seen: [], resume: null })); setRefresh((value) => value + 1); }}>Reset seen ({preferences.seen.length})</button>}{query.sort === "top" && <select aria-label="Top posts time period" value={query.time} onChange={(event) => setQuery((current) => ({ ...current, time: event.target.value as FeedQuery["time"] }))}>{(["hour", "day", "week", "month", "year", "all"] as const).map((time) => <option key={time} value={time}>{time === "all" ? "All time" : `Past ${time}`}</option>)}</select>}<button className="density" aria-pressed={compact} onClick={() => setPreferences((current) => ({ ...current, compact: !current.compact }))}><Grid2X2 size={15}/>{compact ? "Compact" : "Comfortable"}</button><details className="shortcut-help"><summary aria-label="Keyboard shortcuts"><Keyboard size={17}/></summary><div><strong>Keyboard shortcuts</strong><p><kbd>J</kbd> / <kbd>K</kbd> Next / previous card</p><p><kbd>Enter</kbd> Open selected card</p><p><kbd>←</kbd> / <kbd>→</kbd> Gallery images</p><p><kbd>Esc</kbd> Close image viewer</p><span>Click inside the reader to use shortcuts.</span></div></details></div>
+        <div className="view-toolbar">{source === "community" && !isAll && <button className={`favourite-toggle ${isFavourite ? "saved" : ""}`} disabled={!favouritesReady || favouritesBusy} aria-pressed={isFavourite} aria-label={`${isFavourite ? "Remove" : "Add"} r/${query.subreddit} ${isFavourite ? "from" : "to"} favourites`} onClick={() => void updateFavourite(query.subreddit, !isFavourite)}>{favouritesBusy ? <LoaderCircle className="spin" size={15}/> : <Star size={15} fill={isFavourite ? "currentColor" : "none"}/>}<span>{isFavourite ? "Favourited" : "Favourite"}</span></button>}<label className="media-toggle"><input type="checkbox" checked={mediaOnly} onChange={(event) => setPreferences((current) => ({ ...current, mediaOnly: event.target.checked, resume: null }))}/><Image size={14}/>Media only</label><label className="media-toggle" title="Hide posts viewed before this feed opened. Cards stay in place while you read."><input type="checkbox" checked={hideSeen} onChange={(event) => setPreferences((current) => ({ ...current, hideSeen: event.target.checked, resume: null }))}/><EyeOff size={14}/>Hide seen</label>{hideSeen && <button className="reset-seen" onClick={() => { setPreferences((current) => ({ ...current, seen: [], resume: null })); setRefresh((value) => value + 1); }}>Reset seen ({preferences.seen.length})</button>}{query.sort === "top" && <select aria-label="Top posts time period" value={query.time} onChange={(event) => setQuery((current) => ({ ...current, time: event.target.value as FeedQuery["time"] }))}>{(["hour", "day", "week", "month", "year", "all"] as const).map((time) => <option key={time} value={time}>{time === "all" ? "All time" : `Past ${time}`}</option>)}</select>}<button className="density" aria-pressed={compact} onClick={() => setPreferences((current) => ({ ...current, compact: !current.compact }))}><Grid2X2 size={15}/>{compact ? "Compact" : "Comfortable"}</button><details className="shortcut-help"><summary aria-label="Keyboard shortcuts"><Keyboard size={17}/></summary><div><strong>Keyboard shortcuts</strong><p><kbd>J</kbd> / <kbd>K</kbd> Next / previous card</p><p><kbd>Enter</kbd> Open selected card</p><p><kbd>←</kbd> / <kbd>→</kbd> Gallery images</p><p><kbd>Esc</kbd> Close post preview</p><span>Click inside the reader to use shortcuts.</span></div></details></div>
         {memory.saveError && <p className="reader-notice" role="alert">Your latest preferences haven’t saved. {memory.saveError} <button onClick={() => void memory.flush()}>Retry saving</button></p>}
         {(source === "community" || favouritesReady) && <Feed key={`${source}:${query.subreddit}:${query.sort}:${query.time}:${refresh}:${mediaOnly}:${hideSeen}:${source === "favourites" ? favourites.join(",") : ""}`} query={query} compact={compact} mediaOnly={mediaOnly} source={source} hideSeen={hideSeen} seen={preferences.seen} resume={preferences.resume} onSeen={onSeen} onResume={onResume}/>}
       </section>

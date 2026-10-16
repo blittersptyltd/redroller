@@ -76,7 +76,8 @@ export function useReaderMemory(token: string | null) {
   return { state, setState, ready, error, saveError, flush, continueWithoutSaving: () => { temporary.current = true; setReady(true); }, reload: () => setRetry((value) => value + 1) };
 }
 
-export function ImageViewer({ post, initialIndex, onClose }: { post: Post; initialIndex: number; onClose: () => void }) {
+export function PostViewer({ post, initialIndex, returnFocus, onClose }: { post: Post; initialIndex: number; returnFocus: HTMLButtonElement; onClose: () => void }) {
+  const imageOnly = !post.video && post.images.length > 0;
   const dialog = useRef<HTMLDialogElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(initialIndex);
@@ -89,12 +90,12 @@ export function ImageViewer({ post, initialIndex, onClose }: { post: Post; initi
   const didDrag = useRef(false);
   useEffect(() => {
     const element = dialog.current;
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previous = returnFocus;
     const overflow = document.body.style.overflow;
     element?.showModal();
     document.body.style.overflow = "hidden";
-    return () => { element?.close(); document.body.style.overflow = overflow; previous?.focus({ preventScroll: true }); };
-  }, []);
+    return () => { element?.close(); document.body.style.overflow = overflow; previous.focus({ preventScroll: true }); };
+  }, [returnFocus]);
   useLayoutEffect(() => {
     const element = viewport.current;
     if (!element) return;
@@ -113,11 +114,11 @@ export function ImageViewer({ post, initialIndex, onClose }: { post: Post; initi
       viewport.current?.scrollBy({ left: event.key === "ArrowLeft" ? -100 : event.key === "ArrowRight" ? 100 : 0, top: event.key === "ArrowUp" ? -100 : event.key === "ArrowDown" ? 100 : 0 });
       return;
     }
-    if (event.key === "ArrowLeft" && index > 0) { event.preventDefault(); change(index - 1); }
-    if (event.key === "ArrowRight" && index < post.images.length - 1) { event.preventDefault(); change(index + 1); }
+    if (imageOnly && event.key === "ArrowLeft" && index > 0) { event.preventDefault(); change(index - 1); }
+    if (imageOnly && event.key === "ArrowRight" && index < post.images.length - 1) { event.preventDefault(); change(index + 1); }
   }}>
-    <div className="viewer-top"><div><span>r/{post.subreddit}</span><h2 id="viewer-title">{post.title}</h2></div><button aria-label="Close image viewer" onClick={onClose} autoFocus><X size={24}/></button></div>
-    <div ref={viewport} className={`viewer-image${zoomed ? " zoomed" : ""}${dragging ? " dragging" : ""}`}>
+    <div className="viewer-top"><div><span>r/{post.subreddit}</span><h2 id="viewer-title">{post.title}</h2></div><button aria-label="Close post preview" onClick={onClose} autoFocus><X size={24}/></button></div>
+    {imageOnly ? <div ref={viewport} className={`viewer-image${zoomed ? " zoomed" : ""}${dragging ? " dragging" : ""}`}>
       {failed ? <p role="alert">This image couldn’t load. You can open the original on Reddit below.</p> : <button className="viewer-image-button" aria-label={zoomed ? "Zoom out to fit image" : "Zoom image to full resolution"} aria-pressed={zoomed} disabled={!size.width}
         style={zoomed ? { width: size.width, height: size.height } : undefined}
         onClick={(event) => {
@@ -152,9 +153,13 @@ export function ImageViewer({ post, initialIndex, onClose }: { post: Post; initi
         <img key={index} src={post.images[index]} draggable={false} alt={`${post.title}${post.images.length > 1 ? ` — image ${index + 1} of ${post.images.length}` : ""}`} onLoad={(event) => setSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} onError={() => { setFailed(true); setZoomed(false); }}/>
       </button>}
     </div>
-    <div className="viewer-bottom"><div className="viewer-gallery"><button aria-label="Previous gallery image" disabled={index === 0} onClick={() => change(index - 1)}><ChevronLeft size={22}/></button><span aria-live="polite">{index + 1} / {post.images.length}</span><button aria-label="Next gallery image" disabled={index === post.images.length - 1} onClick={() => change(index + 1)}><ChevronRight size={22}/></button></div>
-      {!failed && <button className="viewer-zoom-toggle" disabled={!size.width} onClick={() => { zoomPoint.current = { x: 0.5, y: 0.5 }; setZoomed(!zoomed); }}>{zoomed ? "Fit image" : "100%"}</button>}
-      <button onClick={() => navigateTo(post.permalink)}>Open on Reddit <ArrowUpRight size={16}/></button></div>
+    : <div className="viewer-post-content">
+      {post.video && (failed ? <p role="alert">This video couldn’t load. You can open the original on Reddit below.</p> : <video className="viewer-video" src={post.video} poster={post.images[0]} controls playsInline preload="metadata" onError={() => setFailed(true)}/>)}
+      {post.text ? <p className="viewer-post-text">{post.text}</p> : !post.video && <p className="viewer-unavailable">This post has no media preview available. You can open the original on Reddit below.</p>}
+    </div>}
+    <div className="viewer-bottom">{imageOnly ? <div className="viewer-gallery"><button aria-label="Previous gallery image" disabled={index === 0} onClick={() => change(index - 1)}><ChevronLeft size={22}/></button><span aria-live="polite">{index + 1} / {post.images.length}</span><button aria-label="Next gallery image" disabled={index === post.images.length - 1} onClick={() => change(index + 1)}><ChevronRight size={22}/></button></div> : <span className="viewer-post-meta">u/{post.author} · {post.comments} comments on Reddit</span>}
+      {imageOnly && !failed && <button className="viewer-zoom-toggle" disabled={!size.width} onClick={() => { zoomPoint.current = { x: 0.5, y: 0.5 }; setZoomed(!zoomed); }}>{zoomed ? "Fit image" : "100%"}</button>}
+      <button title="Leaves Redroller" onClick={() => navigateTo(post.permalink)}>Open on Reddit <ArrowUpRight size={16}/></button></div>
   </dialog>;
 }
 

@@ -1,5 +1,5 @@
 {
-  "name": "redroller-brad",
+  "name": "redroller-reader",
   "version": "1.0.0",
   "description": "A responsive infinite subreddit card reader for Devvit",
   "main": "index.js",

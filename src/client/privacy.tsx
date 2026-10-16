@@ -6,19 +6,19 @@ import { readJson } from "./reader-features";
 
 function PrivacyDetails() {
   return <div className="privacy-details">
-    <p>Redroller is an independent reader maintained by u/braddown. It is not endorsed by Reddit. This release shows public, non-mature communities; use the original Reddit post to report content.</p>
+    <p>Redroller is an independent reader supported through r/redroller. It is not endorsed by Reddit. This release shows public, non-mature communities; use the original Reddit post to report content.</p>
     <details><summary>Privacy policy</summary>
       <p>If you choose “Remember my reading”, we store your Reddit user ID, favourites, display preferences, up to 2,000 seen-post IDs, and your place in the feed using Reddit’s app storage. Each subreddit installation keeps its own data. Your favourites are not added to your Reddit subscriptions.</p>
       <p>Saving is optional. Without it, reading preferences last only for this open reader. We do not save post bodies or media, sell your data, use it for advertising or AI training, or send your reading history to an external analytics service. Reddit and media hosts still process requests needed to display content.</p>
       <p>Saved data expires 30 days after its last save. “Delete my saved data” removes it from this installation and stops this reader saving again. Older open tabs cannot restore it without a fresh choice to remember. Earlier playtest data gets a 30-day expiry when accessed or when the installing developer upgrades.</p>
-      <p>Devvit currently provides no supported account-deletion notification for this app. Data from an inactive or deleted account therefore expires within the retention period after its last save. For earlier removal or privacy questions, contact u/braddown and include the subreddit where you used Redroller. Reddit controls its own service logs and retention separately.</p>
+      <p>Devvit currently provides no supported account-deletion notification for this app. Data from an inactive or deleted account therefore expires within the retention period after its last save. For earlier removal or privacy questions, contact the r/redroller moderators and include the subreddit where you used Redroller. Reddit controls its own service logs and retention separately.</p>
       <p>Policy updated 16 October 2026.</p>
     </details>
     <details><summary>Terms of use</summary>
       <p>Redroller provides a free browsing interface for Reddit users. Reddit’s rules and access restrictions still apply. Do not use it to bypass content restrictions, harass others, infringe rights, or collect content for prohibited purposes.</p>
-      <p>Posts and media belong to their respective owners. Availability, image quality, and reading-position recovery depend on Reddit and may change. The app is provided as available; these terms do not exclude rights that cannot legally be excluded. Support and concerns can be raised with u/braddown.</p>
+      <p>Posts and media belong to their respective owners. Availability, image quality, and reading-position recovery depend on Reddit and may change. The app is provided as available; these terms do not exclude rights that cannot legally be excluded. Support and concerns can be raised with the r/redroller moderators.</p>
     </details>
-    <button className="privacy-support" onClick={() => navigateTo("https://www.reddit.com/message/compose/?to=braddown&subject=Redroller%20support")}>Report an issue / contact developer ↗</button>
+    <button className="privacy-support" onClick={() => navigateTo("https://www.reddit.com/message/compose/?to=%2Fr%2Fredroller&subject=Redroller%20support")}>Report an issue / contact support ↗</button>
     <p className="privacy-note">This opens Reddit’s message composer. You choose what to send.</p>
   </div>;
 }
