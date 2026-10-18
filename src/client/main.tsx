@@ -12,6 +12,7 @@ const NUMBER = new Intl.NumberFormat("en", { notation: "compact", maximumFractio
 function PostCard({ post, onPreview }: { post: Post; onPreview: (post: Post, index: number, trigger: HTMLButtonElement) => void }) {
   const [revealed, setRevealed] = useState(false);
   const [imageIndex, setImageIndex] = useState(0);
+  const [loadedImage, setLoadedImage] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const hidden = (post.nsfw || post.spoiler) && !revealed;
   function openPreview(event: MouseEvent<HTMLButtonElement>) {
@@ -23,7 +24,7 @@ function PostCard({ post, onPreview }: { post: Post; onPreview: (post: Post, ind
     {hidden ? <button className="reveal" onClick={() => setRevealed(true)}><Shield size={25}/><strong>{post.nsfw ? "NSFW content" : "Spoiler"}</strong><span>Click to reveal</span></button> : <>
       {post.video && !failed ? <video className="card-media" src={post.video} poster={post.images[0]} controls playsInline preload="none" onError={() => setFailed(true)}/>
         : post.images.length > 0 && !failed ? <div className="image-wrap">
-          <button className="image-button" onClick={openPreview} aria-label={`View image: ${post.title}`}><img src={post.images[imageIndex]} alt={post.title} loading="lazy" decoding="async" onError={() => setFailed(true)}/></button>
+          <button className={`image-button ${loadedImage === post.images[imageIndex] ? "" : "image-loading"}`} onClick={openPreview} aria-label={`View image: ${post.title}`}><img src={post.images[imageIndex]} alt={post.title} loading="lazy" decoding="async" onLoad={() => setLoadedImage(post.images[imageIndex]!)} onError={() => setFailed(true)}/></button>
           {post.images.length > 1 && <div className="gallery-controls"><button aria-label="Previous image" disabled={imageIndex === 0} onClick={() => setImageIndex((index) => index - 1)}><ChevronLeft size={16}/></button><span>{imageIndex + 1} / {post.images.length}</span><button aria-label="Next image" disabled={imageIndex === post.images.length - 1} onClick={() => setImageIndex((index) => index + 1)}><ChevronRight size={16}/></button></div>}
         </div> : null}
       {failed && <button className="media-failed" onClick={openPreview}>Preview post</button>}
@@ -59,7 +60,6 @@ function Feed({ query, compact, mediaOnly, source, hideSeen, seen, resume, onSee
   const recorded = useRef(new Set(seen));
   const inFlight = useRef(false);
   const controller = useRef<AbortController | null>(null);
-  const sentinel = useRef<HTMLDivElement>(null);
   const alive = useRef(true);
   const restoring = useRef(!!resume);
   const restored = useRef(false);
@@ -113,13 +113,30 @@ function Feed({ query, compact, mediaOnly, source, hideSeen, seen, resume, onSee
     // Feed is keyed by source, sort, filters and refresh.
   }, []);
   useEffect(() => {
-    if (!sentinel.current || loading || error || ended || autoPages >= 3) return;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) void loadMore();
-    }, { rootMargin: "600px" });
-    observer.observe(sentinel.current);
-    return () => observer.disconnect();
-  }, [loadMore, loading, error, ended, autoPages]);
+    const element = grid.current;
+    if (!element || loading || error || ended || viewer || autoPages >= 3) return;
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const threshold = window.innerHeight + 600;
+      if (element.getBoundingClientRect().top > threshold) return;
+      // A short column can end above the viewport after a fast scroll. Check
+      // its bottom directly instead of waiting for a sentinel to intersect.
+      const needsPosts = [...element.children].some((column) =>
+        (column.lastElementChild ?? column).getBoundingClientRect().bottom <= threshold);
+      if (needsPosts) void loadMore();
+    };
+    const schedule = () => { if (!frame) frame = window.requestAnimationFrame(check); };
+    const observer = new ResizeObserver(schedule);
+    for (const column of element.children) observer.observe(column);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    schedule();
+    return () => {
+      observer.disconnect(); window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule);
+    };
+  }, [loadMore, loading, error, ended, autoPages, columns, viewer]);
   useEffect(() => {
     const moved = () => { if (!restoring.current) setAutoPages(0); };
     window.addEventListener("scroll", moved, { passive: true });
@@ -231,7 +248,7 @@ function Feed({ query, compact, mediaOnly, source, hideSeen, seen, resume, onSee
         {loading && posts.length === 0 && [0, 1].map((index) => <div key={index} className="skeleton" aria-hidden="true"><div/><span/><span/></div>)}
       </div>)}
     </div>
-    <div className="feed-end" ref={sentinel}>
+    <div className="feed-end">
       {error ? <div className="error-state" role="alert"><Layers size={28}/><h2>That rabbit hole didn’t open.</h2><p>{error}</p><button className="primary" onClick={() => void loadMore()}><RefreshCw size={16}/>Try again</button></div>
         : loading ? <p role="status"><LoaderCircle className="spin" size={18}/> Finding the next good thing…</p>
         : ended ? <p>{visiblePosts.length ? "You’ve reached the end of this feed. Try another sort or community." : source === "favourites" && !posts.length ? "Star some communities to build your favourites mix." : "No posts to show. Try another community or turn off the filters."}</p>
