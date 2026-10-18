@@ -1,6 +1,7 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
   "name": "redroller-reader",
+  "marketingAssets": { "icon": "assets/listing/icon.png" },
   "permissions": { "reddit": true, "redis": true },
   "triggers": { "onAppUpgrade": "/internal/on-app-upgrade" },
   "dev": { "subreddit": "redroller_reader_dev" },

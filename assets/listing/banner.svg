@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="400" viewBox="0 0 1600 400">
+  <defs><linearGradient id="bg" x2="1" y2=".6"><stop stop-color="#141b12"/><stop offset="1" stop-color="#293621"/></linearGradient></defs>
+  <rect width="1600" height="400" fill="url(#bg)"/>
+  <g fill="none" stroke="#b2c78e" stroke-width="2" opacity=".14" transform="translate(1230 -140) rotate(18)">
+    <rect width="300" height="420" rx="30"/><rect x="-48" y="100" width="300" height="420" rx="30"/><rect x="-96" y="200" width="300" height="420" rx="30"/>
+  </g>
+  <g transform="translate(76 58) scale(2.6)" fill="none" stroke="#ff704d" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
+    <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
+    <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="158" y="109" fill="#f0f2e5" font-size="52" font-weight="700" letter-spacing="-2">redroller<tspan fill="#ff704d">.</tspan></text>
+    <text x="80" y="227" fill="#f0f2e5" font-size="68" font-weight="700" letter-spacing="-2">Less noise. <tspan fill="#c8d6a8">More rabbit holes.</tspan></text>
+    <text x="84" y="295" fill="#c0cab4" font-size="29">Your favourite subreddits. An endless wall of cards.</text>
+    <text x="84" y="353" fill="#ff987e" font-size="16" letter-spacing="3">BUILT FOR THE SCROLL</text>
+  </g>
+</svg>

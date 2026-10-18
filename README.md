@@ -1,126 +1,74 @@
+![Redroller — Less noise. More rabbit holes.](https://i.redd.it/dkfmq1uq8bwh1.png)
+
 # Redroller
 
-A responsive, infinite-scrolling Reddit reader inspired by Scrolledit. Browse subreddits as visual cards, save favourites, discover related communities, and inspect images without losing your place.
+**Your favourite subreddits. An endless wall of cards.**
 
-Built with Reddit Devvit, React, TypeScript, Vite, Hono, and Redis. Redroller runs inside Reddit as an interactive post with an expanded reader view.
+Explore Reddit through images, galleries, videos and conversations in a spacious, scrolling reader. Browse All, dive into a community, or bring your favourites together in one feed — all inside Reddit.
 
-## Using Redroller
+**[Try Redroller →](https://www.reddit.com/r/redroller/comments/1x76oio/redroller_explore_your_favourite_subreddits/)** · [Visit r/redroller](https://www.reddit.com/r/redroller/) · [Get help](https://www.reddit.com/message/compose/?to=%2Fr%2Fredroller&subject=Redroller%20support)
 
-Open a Redroller post and select **Open Redroller**. Choose **Continue without saving** for a temporary session, or **Remember my reading** to enable account-linked favourites and reading memory. New readers start at **All**, showing posts across Reddit with the app's public/non-mature content filters. Select **Discover → All** or the logo to return there, or enter a subreddit in the top bar. Returning readers with saving enabled resume their existing selection. Reddit's **Fullscreen** option gives the reader the most space.
+Open the reader post, select **Open Redroller**, then choose **Continue without saving** or **Remember my reading**. You don't need to install anything to browse. Use Reddit's **Fullscreen** option for the most space.
 
-Star a community to add it to the favourites sidebar when saving is enabled. **Favourites mix** combines those communities; **Recommended**, **Popular**, and **Random** help find more. Open **Privacy & help** at any time to read the privacy policy and terms, contact the developer, or delete saved data.
+![Redroller's desktop reader showing a three-column landscape photography feed with subreddit search, sorting and discovery.](https://i.redd.it/rzy68sxq8bwh1.jpeg)
 
-For support or to report an app issue, [message the r/redroller moderators](https://www.reddit.com/message/compose/?to=%2Fr%2Fredroller&subject=Redroller%20support). To report a post, use **Open on Reddit** and Reddit's report controls. Redroller is independently maintained and is not endorsed by Reddit.
+*The live desktop reader, browsing r/EarthPorn. Posts and images belong to their respective creators; feed content changes over time.*
 
-### For moderators
+## Find your next rabbit hole
 
-Once the app is available for your community, install it through its [Devvit app page](https://developers.reddit.com/apps/redroller-reader), then select **Create Redroller reader** from the subreddit moderator menu. This creates the launch post. The app is approved as unlisted; it is not listed for installation by all communities.
+- **Keep rolling.** Explore All or enter a subreddit. New cards load as you scroll, with a manual load-more option when you need it.
+- **Make it your feed.** Choose Hot, New or Top, set a Top time range, switch between comfortable and compact layouts, or show only media.
+- **Keep your favourites close.** Enable saving, star communities and open **Favourites mix** to browse them together.
+- **Discover somewhere new.** Try Recommended for connections to your favourites, Popular for All-time or Trending suggestions, or Random for a fresh selection.
+- **Pick up where you left off.** Optional reading memory saves preferences, seen posts and a best-effort reading position. **Hide seen** skips posts viewed before you opened the current feed.
 
-## Features
+New readers start at **All**. Select **Discover → All** or the Redroller logo to return there. All is Reddit-wide, rather than your personalised Home feed; the app cannot access your subscriptions, saved posts, votes or Reddit browsing history.
 
-- **Card feeds:** images, galleries, Reddit-hosted video, and text posts with automatic pagination and a manual load-more fallback.
-- **All feed:** a Reddit-wide feed in the Discover menu on desktop and mobile. This is not the user's personalised Reddit Home feed; Devvit does not expose subscriptions, saved content, votes, or browsing history.
-- **Feed controls:** Hot, New, and Top sorting; Top time ranges; media-only filtering; comfortable and compact layouts.
-- **Favourites:** a persistent sidebar and a mixed feed combining saved communities. On small screens, navigation collapses into a menu.
-- **Discovery:** Recommended, Popular (All time or Trending), and Random community suggestions.
-- **Optional reading memory:** saved preferences, recent seen-post history, and an attempt to resume at the previous reading position, enabled only after choosing to save.
-- **Hide seen:** filters posts viewed before the current feed opened, so cards do not disappear while reading.
-- **Post previews:** open titles and comment counts inside the reader to view images, videos, or text without losing your place. Images include gallery controls, click-to-zoom to the loaded image's original resolution, and dragging or keyboard panning.
-- **Content controls:** private, quarantined, and mature communities are excluded; mature and removed posts are filtered on the server. Spoiler media requires a reveal action.
-- **Privacy controls:** temporary browsing, explicit saving consent, 30-day retention after the last save, and deletion of saved data.
+## Take a closer look
 
-## Try the current build
+Select a card's image, title or comment count to open a post preview inside the reader. Explore galleries, play supported videos, read text, or inspect an image at its loaded resolution. Close the preview and carry on from the same place.
 
-The public home is [r/redroller](https://www.reddit.com/r/redroller/). Open the [highlighted reader post](https://www.reddit.com/r/redroller/comments/1x76oio/redroller_explore_your_favourite_subreddits/), then select **Open Redroller**. Use Reddit's **Fullscreen** option for the widest view.
+![Redroller's internal post preview showing a landscape image with Fit/100% zoom and gallery controls.](https://i.redd.it/dipqervq8bwh1.jpeg)
 
-The app identifier is `redroller-reader`, with display name **Redroller**. Version **0.0.3** is approved as an unlisted app and installed in r/redroller, including the All feed and internal post previews. Visitors can use the reader without installing the app themselves.
-
-Each app and subreddit installation has separate saved data. Favourites and reading preferences from the earlier app do not transfer automatically. The [private playtest launch post](https://www.reddit.com/r/redroller_reader_dev/comments/1x76kvo/redroller_explore_your_favourite_subreddits/) runs in **r/redroller_reader_dev** and requires moderator-approved access.
-
-## Development setup
-
-### Requirements
-
-- Node.js **22.20.0 or newer**, as specified in `package.json`, and npm.
-- A registered Reddit developer account with access to the Devvit app and its test subreddit.
-- GitHub access to this private repository.
-
-```bash
-git clone https://github.com/blittersptyltd/redroller.git
-cd redroller
-npm ci
-npx devvit login
-npm run dev
-```
-
-`npm run dev` starts a Devvit playtest using the app and private test subreddit configured in [`devvit.json`](devvit.json). It builds the client and server, uploads changes, and prints a Reddit playtest URL. This is a Reddit-hosted development loop, rather than a standalone localhost reader.
-
-To select another authorised test subreddit:
-
-```bash
-npm run dev -- your_test_subreddit
-```
-
-For a separate deployment, register your own Devvit app and update `name` and `dev.subreddit` in `devvit.json`. Cloning this repository does not grant permission to upload to the existing app.
-
-If the installation has no reader post yet, use the subreddit moderator menu action **Create Redroller reader**.
-
-The current application does not require project `.env` variables or a separate Reddit API client ID/secret. Reddit API access and Redis storage come from the Devvit runtime; the CLI handles developer authentication.
-
-### Commands
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Build, upload, and watch the configured private playtest. |
-| `npm run build` | Build client and server bundles into `dist/`. |
-| `npm run typecheck` | Check server/shared and client TypeScript configurations. |
-| `npm test` | Run the configured server test entrypoints. |
-| `node --import tsx src/server/feed.test.ts` | Run the existing suite directly with individual TAP test results. |
-
-Tests cover input validation, media normalization, pagination, mixed feeds, reader state, discovery, content restrictions, consent, migration, retention, and deletion with concurrent saves. UI behaviour should also be checked in the live playtest, particularly fullscreen/mobile layouts, image controls, and saved preferences.
-
-Stopping the playtest process leaves its last uploaded version installed. Public publication is a separate release step; see the [Devvit playtest guide](https://developers.reddit.com/docs/guides/tools/playtest) and [launch guide](https://developers.reddit.com/docs/guides/launch/launch-guide).
-
-## Reader controls
-
-Click inside the reader before using keyboard shortcuts.
+*Image-preview example: “Tatra Mountains, Poland” by u/StiopaK in r/EarthPorn. The **100%** control opens the loaded image at its natural size.*
 
 | Control | Action |
 | --- | --- |
 | `j` / `k` | Focus the next / previous card. |
-| `Enter` on a focused card | Open its post preview, or reveal hidden content first. |
-| Left / right arrow in a fitted image viewer | Move between gallery images. |
-| Click an image or select **100%** | Switch to the loaded image's original dimensions. |
-| Drag, scroll, or use arrow keys while zoomed | Pan around the image. |
+| `Enter` on a focused card | Open its preview, or reveal spoiler content first. |
+| Left / right arrow with an image fitted | Move between gallery images. |
+| Click an image or select **100%** | Zoom to the loaded image's natural dimensions. |
+| Drag, scroll or use arrow keys while zoomed | Pan around the image. |
 | Click the zoomed image or select **Fit image** | Return to the fitted view. |
-| `Escape` | Reset zoom first; close the viewer when already fitted. |
+| `Escape` | Reset zoom first, then close the preview. |
 
-## How it works
+Click inside the reader before using keyboard shortcuts. **Open on Reddit** takes you to the original post in the current tab, where you can read comments, interact or report content.
 
-The React client requests feed and preference data from Hono routes in the Devvit server. The server validates inputs with Zod, uses the Devvit Reddit SDK to retrieve content, and uses the trusted runtime user ID to scope Redis records. Media URLs returned by Reddit are displayed by the browser.
+## Your reading, your choice
 
-| File | Responsibility |
-| --- | --- |
-| [`src/client/main.tsx`](src/client/main.tsx) | Reader layout, cards, feeds, favourites, pagination, and keyboard browsing. |
-| [`src/client/reader-features.tsx`](src/client/reader-features.tsx) | Saved reader state, post preview, and discovery UI. |
-| [`src/client/styles.css`](src/client/styles.css) | Responsive layouts and visual styling. |
-| [`src/client/launch.tsx`](src/client/launch.tsx) | Inline launch screen for the Reddit post. |
-| [`src/client/privacy.tsx`](src/client/privacy.tsx) | Consent choices, privacy policy, terms, support, and deletion controls. |
-| [`src/server/index.ts`](src/server/index.ts) | API routes, consent checks, and reader-post creation. |
-| [`src/server/user-data.ts`](src/server/user-data.ts) | Account-scoped storage, retention, legacy migration, and deletion transactions. |
-| [`src/server/feed.ts`](src/server/feed.ts) | Post normalization and single-community / mixed-feed pagination. |
-| [`src/server/discovery.ts`](src/server/discovery.ts) | Community recommendation, popularity, and random-selection logic. |
-| [`lib/reddit.ts`](lib/reddit.ts) | Shared Zod schemas and TypeScript types. |
-| [`devvit.json`](devvit.json) | App identity, permissions, and entrypoints. |
+Use **Continue without saving** for a temporary session. Sign in to Reddit and choose **Remember my reading** if you want favourites and reading memory across visits. Saving is optional, and your favourites stay separate from your Reddit subscriptions.
 
-### Discovery sources
+Open **Privacy & help** at any time to read the privacy policy and terms, change your saving choice or delete your saved data. Redroller supports public, non-mature communities; private and quarantined communities, mature posts and removed posts are excluded. Spoiler media stays hidden until you reveal it.
 
-- **Recommended** follows community links in favourites' descriptions, supplemented by public discussions explicitly mentioning those favourites. Suggestions include a reason. No LLM or trained recommendation model is used.
-- **Popular — All time** ranks communities by combined scores in Reddit's top 100 all-time Popular posts.
-- **Popular — Trending** ranks communities by appearances and position in the current Popular listing.
-- **Random** shuffles communities found in recent `r/all` posts, avoiding favourites and recently suggested communities where possible.
+## For community moderators
 
-Suggestions are checked for availability and exclude private, NSFW, quarantined, and discovery-disabled communities. Popularity is based on sampled listings, not an exhaustive ranking of every subreddit. Recommendations are fetched on demand without storing a separate copy of a user's favourite-derived results.
+Redroller is **approved as an unlisted app**. Readers can use the existing public reader in r/redroller; the developer listing is where eligible moderators manage installation. Unlisted approval does not make the app available for every community to install.
+
+If the app is available for a community you moderate:
+
+1. Install it from the [Redroller app page](https://developers.reddit.com/apps/redroller-reader).
+2. Select **Create Redroller reader** from the subreddit moderator menu.
+3. Share or pin the launch post so people can open the reader.
+
+Each installation has separate saved data. Favourites and reading preferences do not transfer between app identities or subreddit installations.
+
+## Support and release notes
+
+[Message the r/redroller moderators](https://www.reddit.com/message/compose/?to=%2Fr%2Fredroller&subject=Redroller%20support) for help or to report an app issue. Include the community, device and what happened. To report a Reddit post, use **Open on Reddit** and Reddit's report controls.
+
+**Version 0.0.4** is approved as unlisted and installed in r/redroller. It improves desktop scrolling by loading more posts when any column runs low and reserving space while images load. All feeds and internal post previews are also available.
+
+Redroller is independently maintained, inspired by Scrolledit, and is not endorsed by Reddit.
 
 ## Privacy and retention
 
@@ -128,7 +76,7 @@ Saving is opt-in. When enabled, the app stores the Reddit user ID, favourites, p
 
 **Privacy & help → Delete my saved data** removes the account's saved records in that installation. Consent tokens and Redis transactions stop stale tabs and in-flight saves restoring deleted data. Saving again requires a fresh explicit choice. Earlier playtest data is migrated when the user enables saving, or can be deleted without opting in; access and the installing developer's upgrade apply a 30-day expiry to legacy records.
 
-Devvit currently exposes no supported account-deletion trigger for this app. Inactive/deleted accounts' new-format data expires under the retention period above. Legacy records belonging to testers who never return cannot be globally enumerated with the available storage API; this remains a pre-release limitation. Contact the r/redroller moderators with the installation subreddit for earlier removal. Reddit's service logs follow Reddit's own retention rules. The in-app privacy policy and terms are available before consent and from **Privacy & help** throughout the reader.
+Devvit currently exposes no supported account-deletion trigger for this app. Inactive/deleted accounts' new-format data expires under the retention period above. Legacy records belonging to testers who never return cannot be globally enumerated with the available storage API; this remains a known limitation. Contact the r/redroller moderators with the installation subreddit for earlier removal. Reddit's service logs follow Reddit's own retention rules. The in-app privacy policy and terms are available before consent and from **Privacy & help** throughout the reader.
 
 ### Review notes
 
@@ -144,10 +92,6 @@ Desktop playtest and responsive browser checks are part of development validatio
 - **Reddit controls availability.** Only public or publicly readable restricted communities without mature/quarantine flags are supported. Banned or unavailable communities fail to load. Video playback depends on the media supplied by Reddit.
 - **Release availability depends on Reddit review.** Updates require their own approval before public rollout. A standalone website deployment is not included.
 
-## Repository hygiene
+## For developers
 
-Keep credentials out of source control. [`.gitignore`](.gitignore) excludes `.env*`, `.devvit/`, `node_modules/`, and generated `dist/` bundles. Commit `package-lock.json` with dependency changes so installations remain reproducible.
-
-## AI-assisted development example
-
-Redroller was developed through an iterative AI-assisted workflow: start with a browsing idea, build against the available Reddit platform, test with real content, and refine the interface from screenshots and feedback. The compact layout, favourites, discovery modes, and image zoom provide concrete examples for a future website training section. The application itself does not train an AI model.
+The source repository contains a [development guide](https://github.com/blittersptyltd/redroller/blob/main/docs/DEVELOPMENT.md) with setup, commands and architecture notes. Repository access is required. The app identifier is `redroller-reader`; development uses the private `r/redroller_reader_dev` playtest. No separate Reddit API client ID or project `.env` variables are needed.
