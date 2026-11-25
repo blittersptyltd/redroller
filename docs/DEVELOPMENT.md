@@ -4,33 +4,30 @@ Redroller runs inside Reddit using Devvit, React, TypeScript, Vite, Hono and Red
 
 ## Development setup
 
-### Requirements
-
-- Node.js **22.20.0 or newer**, as specified in `package.json`, and npm.
-- A registered Reddit developer account with access to the Devvit app and its test subreddit.
-- GitHub access to this private repository.
+Install Node.js **22.20.0 or newer**, npm and Git. These commands install the locked dependencies, check the types, run the server tests, and build the client and server bundles locally.
 
 ```bash
 git clone https://github.com/blittersptyltd/redroller.git
 cd redroller
 npm ci
-npx devvit login
-npm run dev
+npm run typecheck
+npm test
+npm run build
 ```
 
-`npm run dev` starts a Devvit playtest using the app and private test subreddit configured in [`devvit.json`](../devvit.json). It builds the client and server, uploads changes, and prints a Reddit playtest URL. This is a Reddit-hosted development loop, rather than a standalone localhost reader.
+### Try your changes on Reddit
 
-To select another authorised test subreddit:
+Reddit hosts the interactive reader. To playtest a fork:
 
-```bash
-npm run dev -- your_test_subreddit
-```
+1. Sign in to your Reddit developer account with `npx devvit login`. Check the username with `npx devvit whoami`.
+2. Register your own Devvit app and choose a test subreddit you moderate. In your local [devvit.json](../devvit.json), set `name` to your app identifier and `dev.subreddit` to the test subreddit name without the `r/` prefix. The committed values belong to the upstream project.
+3. Run `npm run dev` and open the Reddit playtest link printed by the CLI. If you need a launch post, choose **Create Redroller reader** from the subreddit moderator menu.
 
-For a separate deployment, register your own Devvit app and update `name` and `dev.subreddit` in `devvit.json`. Cloning this repository does not grant permission to upload to the existing app.
+Devvit provides the Reddit API and Redis storage. The project needs no separate API key or project `.env` file.
 
-If the installation has no reader post yet, use the subreddit moderator menu action **Create Redroller reader**.
+### Contributing
 
-The current application does not require project `.env` variables or a separate Reddit API client ID/secret. Reddit API access and Redis storage come from the Devvit runtime; the CLI handles developer authentication.
+Fork the repository, create a branch, and open a pull request against `main`. Describe what changed and how you checked it. For reader interface changes, include a screenshot or the steps you used in playtest. Keep your personal playtest settings out of the pull request.
 
 ### Commands
 
@@ -40,7 +37,7 @@ The current application does not require project `.env` variables or a separate 
 | `npm run build` | Build client and server bundles into `dist/`. |
 | `npm run typecheck` | Check server/shared and client TypeScript configurations. |
 | `npm test` | Run the configured server test entrypoints. |
-| `node --import tsx src/server/feed.test.ts` | Run the existing suite directly with individual TAP test results. |
+| `node --import tsx src/server/feed.test.ts` | Run the feed test file directly with individual TAP results. |
 
 Tests cover input validation, media normalization, pagination, mixed feeds, reader state, discovery, content restrictions, consent, migration, retention, and deletion with concurrent saves. UI behaviour should also be checked in the live playtest, particularly fullscreen/mobile layouts, image controls, and saved preferences.
 

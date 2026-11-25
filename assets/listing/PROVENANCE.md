@@ -17,6 +17,6 @@ The developer portal renders README image paths literally. The following assets 
 - Desktop reader: https://i.redd.it/rzy68sxq8bwh1.jpeg
 - Post preview: https://i.redd.it/dipqervq8bwh1.jpeg
 
-Keep the original local assets for future edits; the listing uses the public Reddit-hosted copies because this private repository cannot provide anonymous raw GitHub URLs.
+Keep the original local assets for future edits; the listing uses the public Reddit-hosted copies so images render on both GitHub and the Devvit listing.
 
 The icon is configured separately through `marketingAssets.icon` in `devvit.json`; it is applied after the version is published and approved. Keep the app unlisted unless Brad explicitly requests broader distribution.

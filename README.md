@@ -66,7 +66,7 @@ Each installation has separate saved data. Favourites and reading preferences do
 
 [Message the r/redroller moderators](https://www.reddit.com/message/compose/?to=%2Fr%2Fredroller&subject=Redroller%20support) for help or to report an app issue. Include the community, device and what happened. To report a Reddit post, use **Open on Reddit** and Reddit's report controls.
 
-**Version 0.0.4** is approved as unlisted and installed in r/redroller. It improves desktop scrolling by loading more posts when any column runs low and reserving space while images load. All feeds and internal post previews are also available.
+**Version 0.0.5** was approved as unlisted on 19 October 2026. It introduced the branded listing and reader screenshots. Version 0.0.4 improved desktop scrolling by loading more posts when any column runs low.
 
 Redroller is independently maintained, inspired by Scrolledit, and is not endorsed by Reddit.
 
@@ -94,4 +94,8 @@ Desktop playtest and responsive browser checks are part of development validatio
 
 ## For developers
 
-The source repository contains a [development guide](https://github.com/blittersptyltd/redroller/blob/main/docs/DEVELOPMENT.md) with setup, commands and architecture notes. Repository access is required. The app identifier is `redroller-reader`; development uses the private `r/redroller_reader_dev` playtest. No separate Reddit API client ID or project `.env` variables are needed.
+To build, test, or contribute to Redroller, start with the [development guide](https://github.com/blittersptyltd/redroller/blob/main/docs/DEVELOPMENT.md). Local checks run without a Reddit account. To try changes inside Reddit, use your own Devvit app and test subreddit.
+
+## License
+
+Redroller’s source code is available under the [ISC License](https://github.com/blittersptyltd/redroller/blob/main/LICENSE). Third-party dependencies retain their own licenses. The Reddit posts and photographs shown in screenshots belong to their creators and are outside the code license. See the [screenshot credits](https://github.com/blittersptyltd/redroller/blob/main/assets/listing/PROVENANCE.md).
